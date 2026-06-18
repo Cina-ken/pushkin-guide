@@ -8,16 +8,16 @@
     "start": "next start"
   },
   "dependencies": {
-    "next": "15.1.6",
-    "react": "19.0.0",
-    "react-dom": "19.0.0",
+    "@tensorflow-models/mobilenet": "2.1.1",
     "@tensorflow/tfjs": "4.22.0",
-    "@tensorflow-models/mobilenet": "2.1.1"
+    "next": "^15.1.11",
+    "react": "19.0.0",
+    "react-dom": "19.0.0"
   },
   "devDependencies": {
-    "typescript": "5.7.3",
     "@types/node": "22.10.7",
     "@types/react": "19.0.7",
-    "@types/react-dom": "19.0.3"
+    "@types/react-dom": "19.0.3",
+    "typescript": "5.7.3"
   }
 }
