@@ -13,6 +13,7 @@ export default function Home() {
   const [cameraOn, setCameraOn] = useState(false);
   const [result, setResult] = useState<MatchResult>(null);
   const [busy, setBusy] = useState(false);
+  const [shownImage, setShownImage] = useState<string | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -31,49 +32,73 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  async function attachStream(stream: MediaStream) {
+    streamRef.current = stream;
+    setCameraOn(true);
+    setShownImage(null);
+    await new Promise((r) => setTimeout(r, 60));
+    const v = videoRef.current;
+    if (!v) return;
+    v.srcObject = stream;
+    v.setAttribute("playsinline", "true");
+    v.setAttribute("webkit-playsinline", "true");
+    v.muted = true;
+    const tryPlay = () => v.play().catch(() => {});
+    if (v.readyState >= 1) tryPlay();
+    v.onloadedmetadata = tryPlay;
+  }
+
   async function startCamera() {
     setResult(null);
+    setStatus("Requesting camera...");
     try {
       let stream: MediaStream;
       try {
-        // Prefer the rear camera (real use case: a tourist's phone)
         stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: { ideal: "environment" } },
+          audio: false,
         });
       } catch {
-        // Fall back to any camera (e.g. a laptop's front webcam for the demo)
-        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
       }
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-      setCameraOn(true);
+      await attachStream(stream);
       setStatus("Point at a landmark and tap Identify.");
-    } catch {
-      setStatus("Camera unavailable - use 'Upload a photo' instead.");
+    } catch (err) {
+      const name = (err as Error)?.name || "";
+      if (name === "NotAllowedError") {
+        setStatus("Camera permission was denied. Allow it in the browser, or use Upload a photo.");
+      } else if (name === "NotFoundError") {
+        setStatus("No camera found on this device - use Upload a photo.");
+      } else {
+        setStatus("Camera unavailable - use Upload a photo instead.");
+      }
+      setCameraOn(false);
     }
   }
 
   function stopCamera() {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
     setCameraOn(false);
   }
 
   function identifyFromVideo() {
     if (!videoRef.current || !canvasRef.current) return;
     if (!isReady()) { setStatus("Model still loading, please wait a moment."); return; }
-    setBusy(true);
     const v = videoRef.current;
+    if (!v.videoWidth) { setStatus("Camera still starting - try again in a second."); return; }
+    setBusy(true);
     const c = canvasRef.current;
     c.width = v.videoWidth;
     c.height = v.videoHeight;
     c.getContext("2d")!.drawImage(v, 0, 0);
+    // Freeze the captured frame on screen so the user SEES what was analyzed
+    setShownImage(c.toDataURL("image/jpeg"));
     const match = identify(c);
     setResult(match);
     setStatus(match ? "" : "No confident match - try a clearer, straight-on shot.");
+    stopCamera();
     setBusy(false);
   }
 
@@ -81,6 +106,9 @@ export default function Home() {
     if (!isReady()) { setStatus("Model still loading, please wait a moment."); return; }
     setBusy(true);
     setResult(null);
+    stopCamera();
+    const url = URL.createObjectURL(file);
+    setShownImage(url); // show the uploaded image on screen
     const img = new Image();
     img.onload = () => {
       const match = identify(img);
@@ -89,7 +117,7 @@ export default function Home() {
       setBusy(false);
     };
     img.onerror = () => { setStatus("Could not read that image."); setBusy(false); };
-    img.src = URL.createObjectURL(file);
+    img.src = url;
   }
 
   return (
@@ -118,13 +146,15 @@ export default function Home() {
             <div className="viewport">
               {cameraOn ? (
                 <>
-                  <video ref={videoRef} playsInline muted />
+                  <video ref={videoRef} autoPlay playsInline muted />
                   <div className="reticle" />
                   <div className="scanline" />
                 </>
+              ) : shownImage ? (
+                <img src={shownImage} alt="Captured" />
               ) : (
-                <div style={{ display: "grid", placeItems: "center", height: "100%", color: "#9c9282", fontSize: 14, textAlign: "center", padding: 20 }}>
-                  {modelReady ? "Camera preview will appear here" : "Loading recognition model..."}
+                <div className="viewport-empty">
+                  {modelReady ? "Camera preview or your photo will appear here" : "Loading recognition model..."}
                 </div>
               )}
             </div>
