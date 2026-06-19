@@ -185,6 +185,14 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      <footer className="credits">
+        <div className="credits-title">Developed by</div>
+        <div className="credits-names">
+          Kenneth Chukwu · Akinbola Samuel Oluyemi · Mashuk Musfiq Ahmed · Umeh Samuel Ifeanyi
+        </div>
+        <div className="credits-sub">Modern Software Development · Technology Practicum 2026</div>
+      </footer>
     </div>
   );
 }

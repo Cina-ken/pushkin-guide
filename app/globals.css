@@ -103,3 +103,29 @@ html, body {
 .tab { flex: 1; text-align: center; padding: 11px; border-radius: 10px; background: #fffdf8;
   border: 1px solid var(--line); color: var(--ink-soft); cursor: pointer; font-weight: 700; font-size: 14px; }
 .tab.active { background: linear-gradient(135deg, var(--brick), var(--brick-deep)); color: var(--paper); border-color: transparent; }
+
+
+.credits {
+  margin-top: 28px;
+  padding: 18px;
+  text-align: center;
+  border-top: 1px solid var(--line);
+}
+.credits-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--ink-soft);
+  margin-bottom: 6px;
+}
+.credits-names {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.6;
+}
+.credits-sub {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-top: 6px;
+}
